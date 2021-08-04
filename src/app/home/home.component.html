@@ -1,4 +1,4 @@
-<div class="grid-container">
+<!-- <div class="grid-container">
     <div class="grid-left">
         <app-rooms #rooms (roomChanged)="onRoomChanged($event)"
             [activeRoomName]="!!activeRoom ? activeRoom.name : null"></app-rooms>
@@ -12,4 +12,24 @@
     <div class="grid-right">
         <app-settings #settings (settingsChanged)="onSettingsChanged($event)"></app-settings>
     </div>
+</div> -->
+
+<div *ngIf="!isRoomExist">
+    <button (click)="createRoom()">Create Room 1</button>
+    <button (click)="createRoom()">Create Room 2</button>
+</div>
+
+<div *ngIf="isRoomExist">
+    <button (click)="joinRoom()">Join Room</button>
+</div>
+
+<div class="grid-content">
+    <app-camera #camera [style.display]="!!activeRoom ? 'none' : 'block'"></app-camera>
+    <app-participants #participants (leaveRoom)="onLeaveRoom($event)"
+        (participantsChanged)="onParticipantsChanged($event)" [style.display]="!!activeRoom ? 'block' : 'none'"
+        [activeRoomName]="!!activeRoom ? activeRoom.name : null"></app-participants>
+</div>
+
+<div class="grid-right">
+    <app-settings #settings (settingsChanged)="onSettingsChanged($event)"></app-settings>
 </div>

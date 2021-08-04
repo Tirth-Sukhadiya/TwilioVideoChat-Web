@@ -21,9 +21,21 @@ export class HomeComponent implements OnInit {
     activeRoom: Room;
 
     private notificationHub: HubConnection;
+    isRoomExist: boolean = false;
+    roomGuid: string;
 
     constructor(
-        private readonly videoChatService: VideoChatService) { }
+        private readonly videoChatService: VideoChatService) {
+        let roomSidParams = (new URL(location.href)).searchParams.get('roomSid');
+        if (
+            roomSidParams !== null && roomSidParams != "" && typeof roomSidParams !== "undefined"
+        ) {
+            this.isRoomExist = true;
+            this.roomGuid = roomSidParams;
+        }
+        else
+            this.isRoomExist = false;
+    }
 
     async ngOnInit() {
         const builder =
@@ -71,7 +83,7 @@ export class HomeComponent implements OnInit {
 
             this.activeRoom =
                 await this.videoChatService
-                          .joinOrCreateRoom(roomName, tracks);
+                    .joinOrCreateRoom(roomName, tracks);
 
             this.participants.initialize(this.activeRoom.participants);
             this.registerRoomEvents();
@@ -105,6 +117,56 @@ export class HomeComponent implements OnInit {
     private isDetachable(track: LocalTrack): track is LocalAudioTrack | LocalVideoTrack {
         return !!track
             && ((track as LocalAudioTrack).detach !== undefined
-            || (track as LocalVideoTrack).detach !== undefined);
+                || (track as LocalVideoTrack).detach !== undefined);
+    }
+
+    createRoom() {
+        this.videoChatService.getNewRoom().subscribe(async (_roomResponse) => {
+            if (this.activeRoom) {
+                this.activeRoom.disconnect();
+            }
+
+            this.camera.finalizePreview();
+            const tracks = await this.settings.showPreviewCamera();
+
+            this.activeRoom =
+                await this.videoChatService
+                    .joinOrCreateRoom(_roomResponse.name, tracks);
+
+            this.participants.initialize(this.activeRoom.participants);
+            this.registerRoomEvents();
+
+            this.notificationHub.send('RoomsUpdated', true);
+            console.log("Join Link", `${location.href}?roomSid=${_roomResponse.name}`);
+            this.copyToClipboard(`${location.href}?roomSid=${_roomResponse.name}`);
+        });
+    }
+
+    async joinRoom() {
+        if (this.activeRoom) {
+            this.activeRoom.disconnect();
+        }
+
+        this.camera.finalizePreview();
+        const tracks = await this.settings.showPreviewCamera();
+
+        this.activeRoom =
+            await this.videoChatService
+                .joinOrCreateRoom(this.roomGuid, tracks);
+
+        this.participants.initialize(this.activeRoom.participants);
+        this.registerRoomEvents();
+
+        this.notificationHub.send('RoomsUpdated', true);
+    }
+
+    copyToClipboard(text: string) {
+        const event = (e: ClipboardEvent) => {
+            e.clipboardData.setData('text/plain', text);
+            e.preventDefault();
+        }
+        document.addEventListener('copy', event);
+        document.execCommand('copy');
+        alert(`Joining link copied to clipboard! \n ${text}`);
     }
 }

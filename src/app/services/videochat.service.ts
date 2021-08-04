@@ -44,6 +44,11 @@ export class VideoChatService {
             .toPromise();
     }
 
+    getNewRoom() {
+        return this.http
+            .get<NamedRoom>('http://localhost:42945/api/video/room');
+    }
+
     async joinOrCreateRoom(name: string, tracks: LocalTrack[]) {
         let room: Room = null;
         try {
